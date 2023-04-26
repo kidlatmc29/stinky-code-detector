@@ -1,0 +1,4 @@
+1. Long Method/Function Detection
+2. Long Parameter List Detection
+3. Duplicate Code Detection
+4. Quit

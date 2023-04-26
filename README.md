@@ -1,5 +1,4 @@
 ## stinky-code-detector
-***
 This is a program that can detect code smells. 
 
 ### Built With
