@@ -1,23 +1,42 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <list>
+#include <vector>
 
 using namespace std;
 
 const string MENU_OPTIONS_FILE = "../data/menu_options.txt";
 
-void getMenuOptions(list<string> list);
+void printWelcomeMessage();
+
+void loadMenuOptions(vector<string>& list);
+
+void printMenuOptions(const vector<string>& list);
+
+ int getMenuOptionChoice();
 
 int main() {
-    list<string> menuOptions{};
-    getMenuOptions(menuOptions);
+    vector<string> menuOptions{};
 
-    cout << "Hello, World!" << std::endl;
+    loadMenuOptions(menuOptions);
+    printWelcomeMessage();
+    printMenuOptions(menuOptions);
+
+
     return 0;
 }
 
-void getMenuOptions(list<string> list){
+void printWelcomeMessage() {
+    cout << "Welcome to Stinky Code Smell Detection!" << endl
+         << "The file you input contains the following methods/functions: "
+         << endl;
+
+    // TODO: Create a getFxnsFrom input file method
+
+
+}
+
+void loadMenuOptions(vector<string>& list){
     ifstream inFile;
     string line;
 
@@ -33,4 +52,21 @@ void getMenuOptions(list<string> list){
     inFile.close();
 }
 
+void printMenuOptions(const vector<string>& list)
+{
+    cout << "Please select an option:" << endl;
+    for(const auto & value : list) {
+        cout << value << endl;
+    }
+}
+
+
+int getMenuOptionChoice() {
+    int userMenuOptionChoice = 0;
+
+    while(userMenuOptionChoice < 1 || userMenuOptionChoice > 4) {
+
+    }
+
+}
 
