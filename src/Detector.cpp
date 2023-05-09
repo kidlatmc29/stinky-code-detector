@@ -4,6 +4,26 @@
 
 #include "Detector.h"
 
-vector<string> Detector::detect() {
-    return nullptr;
+using namespace std;
+
+Detector::Detector() {
+}
+
+Detector::~Detector() {
+}
+
+int Detector::detectLongFunction(const string function) {
+    return 0;
+}
+
+int Detector::detectLongParameters(const string function) {
+    return 0;
+}
+
+double Detector::detectDuplicateCode(const string function) {
+    return 0;
+}
+
+void Detector::processFunction(const string function) {
+
 }

@@ -2,6 +2,7 @@
 // Created by Isabel Ovalles on 4/26/23.
 //
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -10,7 +11,14 @@ using namespace std;
 
 class Detector{
 public:
-    virtual vector<string> detect();
+    Detector();
+    ~Detector();
+    int detectLongFunction(const string function);
+    int detectLongParameters(const string function);
+    double detectDuplicateCode(const string function);
+
+private:
+    void processFunction(const string function);
 };
 
 #endif //STINKY_CODE_DETECTOR_DETECTOR_H
