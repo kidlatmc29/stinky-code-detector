@@ -3,19 +3,21 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <clang-c/Index.h>
+#include <cctype>
+#include <algorithm>
+#include <regex>
 
 using namespace std;
 
 const string MENU_OPTIONS_FILE = "./data/menu_options.txt";
+const int MENU_LOWERBOUND = 1;
+const int MENU_UPPERBOUND = 4;
 
-void printWelcomeMessage(string inputFileName);
+void printWelcomeMessage(string inputFileName, const vector<string> functionNames);
 
-void getInputFunctionNames(vector<string> inputFunctions);
+void parseFunctionNames(vector<string> &functionNames, string line);
 
-vector<string> getInputFunctions(string fileName);
-
-vector<string> getFunctionInfo(CXCursor CURRENT_CURSOR);
+vector<string> getInputFunctionNames(string fileName);
 
 void loadMenuOptions(vector<string>& list);
 
@@ -23,20 +25,23 @@ void printMenuOptions(const vector<string>& list);
 
 int getMenuOptionChoice();
 
+bool isDigits(string input);
+
 int main(int argc, char* argv[]) {
     try{
         if(argc < 2) {
             throw runtime_error("Not enough arguments provided. Missing input file name.\n");
         } else {
             string inputFileName = argv[1];
-            vector<string> menuOptions{};
-            vector<string> inputFunctionNames{};
-            vector<string> inputFunctions{};
+            vector<string> menuOptions;
+            vector<string> inputFunctionNames;
+            vector<string> inputFunctions;
 
-            getInputFunctions(inputFileName);
+            inputFunctionNames = getInputFunctionNames(inputFileName);
             loadMenuOptions(menuOptions);
-            printWelcomeMessage(inputFileName);
+            printWelcomeMessage(inputFileName, inputFunctionNames);
             printMenuOptions(menuOptions);
+            getMenuOptionChoice();
         }
     } catch (exception& error){
         cerr << endl << "Error: " << error.what() << endl;
@@ -44,19 +49,31 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void printWelcomeMessage(string inputFileName) {
+void printWelcomeMessage(string inputFileName, const vector<string> functionNames) {
     cout << endl <<  "Welcome to Stinky Code Smell Detection!" << endl << endl
-         << "The file \"" << inputFileName << "\" contains the following methods/functions: "
-         << endl;
-
-    // TODO: Create a getFxnsFrom input file method
-
+         << "The file \"" << inputFileName << "\" contains the following methods/functions: ";
+    for(int index = 0; index < (int) functionNames.size(); index++) {
+        cout << functionNames[index];
+        if(index < (int) (functionNames.size() - 1)){
+            cout << ", ";
+        }
+    }
+    cout << endl;
 }
 
-void getInputFunctionNames(vector<string> inputFunctions)
+void parseFunctionNames(vector<string> &functionNames, string line)
 {
-    cout << "Getting input function names " << endl;
-    // TODO: Parse the function names from the inputFunctions, this is called after reading from input file
+    regex regex(R"(^\s*[\w\s]+\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\()");
+
+    smatch match;
+    if (regex_search(line, match, regex)) {
+        string possibleFunctionName = match[1];
+        if(possibleFunctionName != "for" && possibleFunctionName != "while" && possibleFunctionName != "if"){
+            for (size_t i = 1; i < match.size(); i++) {
+                functionNames.push_back(match[i]);
+            }
+        }
+    }
 }
 
 void loadMenuOptions(vector<string>& list){
@@ -75,64 +92,63 @@ void loadMenuOptions(vector<string>& list){
     inFile.close();
 }
 
-vector<string> getInputFunctions(string fileName)
+vector<string> getInputFunctionNames(string fileName)
 {
-    vector<string> inputFunctions{};
-    CXIndex INDEX = clang_createIndex(0,0);
-    CXTranslationUnit TRANSLATION_UNIT = clang_parseTranslationUnit(INDEX, fileName.c_str(), nullptr, 0, nullptr, 0, CXTranslationUnit_None);
+    ifstream inputFile;
+    vector<string> inputFunctionNames;
+    string line;
 
-    cout << "Getting input functions from: " << fileName << endl;
+    //cout << "opening " << fileName << endl;
+    inputFile.open(fileName);
 
-    try {
-        if(TRANSLATION_UNIT == nullptr) {
-            throw runtime_error("Failed to parse translation unit from clang.\n");
+    if(!inputFile.fail()){
+        cout << "reading from " << fileName << endl;
+        while(getline(inputFile, line)) {
+            // cout << "current line: " << line << endl;
+            parseFunctionNames(inputFunctionNames, line);
         }
-
-        CXCursor CURRENT_CURSOR = clang_getTranslationUnitCursor(TRANSLATION_UNIT);
-        clang_visitChildren(CURRENT_CURSOR, [CURRENT_CURSOR](CXCursor cursor, CXCursor parent, CXClientData clientData) -> CXChildVisitResult {
-            getFunctionInfo(CURRENT_CURSOR);
-            return CXChildVisit_Recurse;
-        }, nullptr);
-
-        clang_disposeTranslationUnit(TRANSLATION_UNIT);
-        clang_disposeIndex(INDEX);
-
-    } catch (exception& error){
-        cerr << endl << "Error: " << error.what() << endl;
+    } else {
+        cout << "Failed to open " << fileName << endl;
     }
 
-    return inputFunctions;
-}
-
-vector<string> getFunctionInfo(CXCursor CURRENT_CURSOR){
-    vector<string> functionNames{};
-    CXString currentFunctionName = clang_getCursorSpelling(CURRENT_CURSOR);
-    CXCursorKind currentCursorKind = clang_getCursorKind(CURRENT_CURSOR);
-
-    if(currentCursorKind == CXCursor_FunctionDecl) {
-        cout << "Function Name: " << clang_getCString(currentFunctionName);
-        functionNames.push_back(clang_getCString(currentFunctionName));
-    }
-
-    clang_disposeString(currentFunctionName);
-    return functionNames;
+    inputFile.close();
+    return inputFunctionNames;
 }
 
 void printMenuOptions(const vector<string>& list)
 {
-    cout << endl << "Please select an option:" << endl;
-    for(const auto & value : list) {
+    cout << endl << "============== MENU ==============" << endl;
+    for(const string & value : list) {
         cout << value << endl;
     }
+    cout << "==================================" << endl;
 }
 
 int getMenuOptionChoice() {
-    //int userMenuOptionChoice = 0;
+    int userMenuChoice = 0;
+    string userInput;
 
-    //while(userMenuOptionChoice < 1 || userMenuOptionChoice > 4) {
+    while(userMenuChoice < MENU_LOWERBOUND || userMenuChoice > MENU_UPPERBOUND) {
+        cout << "Please select an option: ";
+        cin >> userInput;
+        if(isDigits(userInput)){
+            userMenuChoice = stoi(userInput);
+        } else {
+            cout << "Invalid option. ";
+        }
+    }
 
-    //}
+    cout << endl << "You have chosen option " << userMenuChoice << "." << endl;
 
-    return 0;
+    return userMenuChoice;
 }
 
+bool isDigits(string input){
+    bool isOnlyDigits = true;
+    for(int index = 0; index < (int) input.length(); index++) {
+        if(!isdigit(input[index])){
+            isOnlyDigits = false;
+        }
+    }
+    return isOnlyDigits;
+}
